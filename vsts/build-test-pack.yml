@@ -1,0 +1,81 @@
+name: $(BuildID)_$(BuildDefinitionName)_$(SourceBranchName)_$(Date:yyyyMMdd)$(Rev:.r)
+resources:
+  - repo: self
+    clean: true
+
+jobs:
+
+  ### Windows build ###
+  - job: Windows Build
+    displayName: Windows Build
+    timeoutInMinutes: 75
+    strategy:
+      # Change maxParallel to 1 make builds run in serial rather than in parallel
+      maxParallel: 100
+      matrix:
+        .Net 6.0:
+          FRAMEWORK: net6.0
+        .Net 5.0:
+          FRAMEWORK: net5.0
+        .Net Core 3.1:
+          FRAMEWORK: netcoreapp3.1
+        .Net Core 2.1.18:
+          FRAMEWORK: netcoreapp2.1.18
+
+    condition: succeeded()
+    pool:
+      vmImage: windows-2022
+
+    steps:
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core SDK 2.1'
+        inputs:
+          packageType: sdk
+          version: 2.1.x
+          performMultiLevelLookup: true
+          installationPath:
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core SDK 3.1'
+        inputs:
+          packageType: sdk
+          version: 3.1.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/dotnet
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 5.0'
+        inputs:
+          packageType: sdk
+          version: 5.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/dotnet
+
+      - powershell: |
+        Write-Host "System Artifacts contents:"
+        gci $(System.ArtifactsDirectory)
+
+      - task: PowerShell@2
+        displayName: 'Build and package'
+        inputs:
+          targetType: filePath
+          filePath: './build.ps1'
+          arguments: '-clean -configuration Release -build -package'
+          workingDirectory: '$(System.ArtifactsDirectory)/_azure-iot-sdk-net'
+
+      - powershell: |
+        $file_date = get-date -f yyyy-MM-dd-hh-mm-ss.f
+        Write-Host "Package contents:"
+        gci $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkg
+        Write-Host " "
+        Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
+        Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
+        Write-Host "The package name below is used in the partner release pipeline to identify files for signing"
+        Write-Host " "
+        Write-Host "azure-iot-sdk/net/pkgs_$file_date"
+        Write-Host " "
+        Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
+        Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
+        Write-Host " "
+        Rename-Item $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkg $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkgs_$file_date
+        
