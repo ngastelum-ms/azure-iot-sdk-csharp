@@ -6,7 +6,7 @@ resources:
 jobs:
 
   ### Windows build ###
-  - job: Windows-build
+  - job: Windows_build
     displayName: Windows Build
     timeoutInMinutes: 75
     strategy:
