@@ -13,28 +13,14 @@ jobs:
       # Change maxParallel to 1 make builds run in serial rather than in parallel
       maxParallel: 100
       matrix:
-        .Net 6.0:
-          FRAMEWORK: net6.0
-        .Net 5.0:
-          FRAMEWORK: net5.0
         .Net Core 3.1:
           FRAMEWORK: netcoreapp3.1
-        .Net Core 2.1.18:
-          FRAMEWORK: netcoreapp2.1.18
 
     condition: succeeded()
     pool:
       vmImage: windows-2022
 
     steps:
-      - task: UseDotNet@2
-        displayName: 'Use .NET Core SDK 2.1'
-        inputs:
-          packageType: sdk
-          version: 2.1.x
-          performMultiLevelLookup: true
-          installationPath:
-
       - task: UseDotNet@2
         displayName: 'Use .NET Core SDK 3.1'
         inputs:
@@ -43,13 +29,12 @@ jobs:
           performMultiLevelLookup: true
           installationPath: $(Agent.ToolsDirectory)/dotnet
 
-      - task: UseDotNet@2
-        displayName: 'Use .NET SDK 5.0'
+      - task: DownloadGitHubRelease@0
         inputs:
-          packageType: sdk
-          version: 5.x
-          performMultiLevelLookup: true
-          installationPath: $(Agent.ToolsDirectory)/dotnet
+          connection: 'GitHub OAuth - az-iot-builder-01'
+          userRepository: 'az-iot-builder-01/azure-iot-sdk-csharp'
+          defaultVersionType: 'latest'
+          downloadPath: '$(System.ArtifactsDirectory)'
 
       - task: PowerShell@2
         displayName: 'Show Contents'
