@@ -30,19 +30,21 @@ jobs:
           installationPath: $(Agent.ToolsDirectory)/dotnet
 
       - task: PowerShell@2
-        displayName: 'Show Repo Contents'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Source contents:"
-            gci $(Build.SourcesDirectory)
-
-      - task: PowerShell@2
         displayName: 'Build and package'
         inputs:
           targetType: filePath
           filePath: '$(Build.SourcesDirectory)/build.ps1'
           arguments: '-clean -configuration Release -build -package'
+
+      - task: PowerShell@2
+        displayName: 'Show Package Contents'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Package contents:"
+            gci -Path $(Build.SourcesDirectory)
+            Write-Host "Package contents:"
+            gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
 
       - task: PowerShell@2
         displayName: 'Add date for Packages'
@@ -51,7 +53,7 @@ jobs:
           script: |
             $file_date = get-date -f yyyy-MM-dd-hh-mm-ss.f
             Write-Host "Package contents:"
-            gci $(System.ArtifactsDirectory)/bin/pkg
+            gci $(Build.SourcesDirectory)/bin/pkg
             Write-Host " "
             Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
             Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
@@ -62,5 +64,5 @@ jobs:
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host " "
-            Rename-Item $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkg $(System.ArtifactsDirectory)/bin/pkgs_$file_date
+            Rename-Item $(Build.SourcesDirectory)/_azure-iot-sdk-net/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$file_date
         
