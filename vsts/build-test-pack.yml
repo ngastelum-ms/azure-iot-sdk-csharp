@@ -29,38 +29,72 @@ jobs:
           performMultiLevelLookup: true
           installationPath: $(Agent.ToolsDirectory)/dotnet
 
-      - task: PowerShell@2
-        displayName: 'Build and package'
-        inputs:
-          targetType: filePath
-          filePath: '$(Build.SourcesDirectory)/build.ps1'
-          arguments: '-clean -configuration Release -build -package'
-
-      - task: PowerShell@2
-        displayName: 'Show Package Contents'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Package contents:"
-            gci -Path $(Build.SourcesDirectory)
-            Write-Host "Package contents:"
-            gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
-
       - script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
           sn -Vr *,31bf3856ad364e35
         displayName: 'Disable strong name validation'
 
       - script: |
-          choco install -y squid
-            
+          choco install -y squid            
         displayName: 'Install Squid'
 
-      - powershell: ./vsts/start_tpm_windows.ps1
-        displayName: "Start TPM Simulator"
+      - task: PowerShell@2
+        displayName: 'Start TPM Simulator'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host Start TPM Simulator
+            Start $(Build.SourcesDirectory)\vsts\TpmSimulator\Simulator.exe
+            
+      - task: PowerShell@2
+        displayName: 'Start Docker'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host List active docker containers
+            docker ps -a
 
-      - powershell: ./vsts/releaseTest.ps1
-        displayName: Test release nugets
+      - powershell: |
+          Function IsWindows() 
+          {
+            return ([Environment]::OSVersion.Platform -eq [System.PlatformID]::Win32NT)
+          }
+
+          if (isWindows) 
+          {
+            Write-Host Start ETL logging
+            logman create trace IotTrace -o iot.etl -pf tools/CaptureLogs/iot_providers.txt
+            logman start IotTrace
+          }
+          Write-Host Add DevOps artifacts location as local NuGet source
+          dotnet nuget add source $env:AZURE_IOT_LOCALPACKAGES -n "LocalPackages"
+
+          Write-Host List all NuGet sources
+          dotnet nuget list source
+          
+          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -clean -configuration Release -build -package -framework $(FRAMEWORK) -e2etests"
+          Invoke-Expression $runTestCmd
+
+          $gateFailed = $LASTEXITCODE
+
+          if (isWindows) 
+          {
+            Write-Host Stop ETL logging
+            logman stop IotTrace
+            logman delete IotTrace
+          }
+
+          if ($gateFailed) 
+          {
+            Write-Error "Testing was not successful, exiting..."
+            exit 1
+          }
+          else 
+          {
+            Write-Host "Testing was successful!"
+            exit 0
+          }      
+        displayName: 'Build, package, test'
         env:
           # Environment variables for IoT Hub E2E tests
           IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
@@ -93,7 +127,7 @@ jobs:
           PROXY_SERVER_ADDRESS: 127.0.0.1:3128
           TARGET_BRANCH: $(System.PullRequest.TargetBranch)
           FRAMEWORK: $(FRAMEWORK)
-          AZURE_IOT_LOCALPACKAGES: $(Build.ArtifactStagingDirectory)/nuget
+          AZURE_IOT_LOCALPACKAGES: $(Build.SourcesDirectory)/bin/pkg
 
           # Environment variables for invalid certificate tests
           IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
