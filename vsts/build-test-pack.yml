@@ -39,11 +39,11 @@ jobs:
             Write-Host "Binary content"
             gci $(Build.BinariesDirectory)
             Write-Host "Staging Content"
-            gic $(Build.ArtifactStagingDirectory)
+            gci $(Build.ArtifactStagingDirectory)
             Write-Host "Agent work folder"
-            gic $(Agent.WorkFolder)
+            gci $(Agent.WorkFolder)
             Write-Host "System Default folder"
-            gic $(System.DefaultWorkingDirectory)
+            gci $(System.DefaultWorkingDirectory)
 
       - task: PowerShell@2
         displayName: 'Build and package'
