@@ -66,13 +66,17 @@ jobs:
             logman create trace IotTrace -o iot.etl -pf tools/CaptureLogs/iot_providers.txt
             logman start IotTrace
           }
+
+          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package"
+          Invoke-Expression $runTestCmd
+
           Write-Host Add DevOps artifacts location as local NuGet source
           dotnet nuget add source $env:AZURE_IOT_LOCALPACKAGES -n "LocalPackages"
 
           Write-Host List all NuGet sources
           dotnet nuget list source
           
-          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -clean -configuration Release -build -package -framework $(FRAMEWORK) -e2etests"
+          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -configuration Release -framework $(FRAMEWORK) -e2etests"
           Invoke-Expression $runTestCmd
 
           $gateFailed = $LASTEXITCODE
