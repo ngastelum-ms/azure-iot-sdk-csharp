@@ -36,10 +36,10 @@ jobs:
 
       - script: |
           choco install -y squid            
-        displayName: 'Install Squid'
+        displayName: 'Install Squid (Setup proxy for test)'
 
       - task: PowerShell@2
-        displayName: 'Start TPM Simulator'
+        displayName: 'Start TPM Simulator (Setup TPM for test)'
         inputs:
           targetType: 'inline'
           script: |
@@ -47,12 +47,11 @@ jobs:
             Start $(Build.SourcesDirectory)\vsts\TpmSimulator\Simulator.exe
             
       - task: PowerShell@2
-        displayName: 'Start Docker'
+        displayName: 'Build Packages'
         inputs:
           targetType: 'inline'
           script: |
-            Write-Host List active docker containers
-            docker ps -a
+            $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - powershell: |
           Function IsWindows() 
@@ -66,9 +65,6 @@ jobs:
             logman create trace IotTrace -o iot.etl -pf tools/CaptureLogs/iot_providers.txt
             logman start IotTrace
           }
-
-          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package"
-          Invoke-Expression $runTestCmd
 
           Write-Host Add DevOps artifacts location as local NuGet source
           dotnet nuget add source $env:AZURE_IOT_LOCALPACKAGES -n "LocalPackages"
@@ -98,7 +94,7 @@ jobs:
             Write-Host "Testing was successful!"
             exit 0
           }      
-        displayName: 'Build, package, test'
+        displayName: 'E2E Tests'
         env:
           # Environment variables for IoT Hub E2E tests
           IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
