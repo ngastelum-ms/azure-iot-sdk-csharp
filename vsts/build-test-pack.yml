@@ -32,7 +32,7 @@ jobs:
       - task: DownloadGitHubRelease@0
         inputs:
           connection: 'GitHub OAuth - az-iot-builder-01'
-          userRepository: 'az-iot-builder-01/azure-iot-sdk-csharp'
+          userRepository: 'Azure/azure-iot-csharp'
           defaultVersionType: 'latest'
           downloadPath: '$(System.ArtifactsDirectory)'
 
