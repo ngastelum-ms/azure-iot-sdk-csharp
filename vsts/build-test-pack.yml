@@ -36,14 +36,6 @@ jobs:
           script: |
             Write-Host "Source contents:"
             gci $(Build.SourcesDirectory)
-            Write-Host "Binary content"
-            gci $(Build.BinariesDirectory)
-            Write-Host "Staging Content"
-            gci $(Build.ArtifactStagingDirectory)
-            Write-Host "Agent work folder"
-            gci $(Agent.WorkFolder)
-            Write-Host "System Default folder"
-            gci $(System.DefaultWorkingDirectory)
 
       - task: PowerShell@2
         displayName: 'Build and package'
@@ -51,7 +43,6 @@ jobs:
           targetType: filePath
           filePath: '$(Build.SourcesDirectory)/build.ps1'
           arguments: '-clean -configuration Release -build -package'
-          workingDirectory: '$(System.ArtifactsDirectory)/_azure-iot-sdk-net'
 
       - task: PowerShell@2
         displayName: 'Add date for Packages'
@@ -60,7 +51,7 @@ jobs:
           script: |
             $file_date = get-date -f yyyy-MM-dd-hh-mm-ss.f
             Write-Host "Package contents:"
-            gci $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkg
+            gci $(System.ArtifactsDirectory)/bin/pkg
             Write-Host " "
             Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
             Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
@@ -71,5 +62,5 @@ jobs:
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host " "
-            Rename-Item $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkg $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkgs_$file_date
+            Rename-Item $(System.ArtifactsDirectory)/_azure-iot-sdk-net/bin/pkg $(System.ArtifactsDirectory)/bin/pkgs_$file_date
         
