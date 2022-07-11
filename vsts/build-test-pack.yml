@@ -29,26 +29,27 @@ jobs:
           performMultiLevelLookup: true
           installationPath: $(Agent.ToolsDirectory)/dotnet
 
-      - task: DownloadGitHubRelease@0
-        inputs:
-          connection: 'GitHub OAuth - az-iot-builder-01'
-          userRepository: 'Azure/azure-iot-csharp'
-          defaultVersionType: 'latest'
-          downloadPath: '$(System.ArtifactsDirectory)'
-
       - task: PowerShell@2
-        displayName: 'Show Contents'
+        displayName: 'Show Repo Contents'
         inputs:
           targetType: 'inline'
           script: |
-            Write-Host "System Artifacts contents:"
-            gci $(System.ArtifactsDirectory)
+            Write-Host "Source contents:"
+            gci $(Build.SourcesDirectory)
+            Write-Host "Binary content"
+            gci $(Build.BinariesDirectory)
+            Write-Host "Staging Content"
+            gic $(Build.ArtifactStagingDirectory)
+            Write-Host "Agent work folder"
+            gic $(Agent.WorkFolder)
+            Write-Host "System Default folder"
+            gic $(System.DefaultWorkingDirectory)
 
       - task: PowerShell@2
         displayName: 'Build and package'
         inputs:
           targetType: filePath
-          filePath: './build.ps1'
+          filePath: '$(Build.SourcesDirectory)/build.ps1'
           arguments: '-clean -configuration Release -build -package'
           workingDirectory: '$(System.ArtifactsDirectory)/_azure-iot-sdk-net'
 
