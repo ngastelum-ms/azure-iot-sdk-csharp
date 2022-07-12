@@ -5,24 +5,16 @@ resources:
 
 jobs:
   
-  ### Windows build ###
-  - job: Windows_Test
-    displayName: Windows Build
-    timeoutInMinutes: 200
-    strategy:
-      # Change maxParallel to 1 make builds run in serial rather than in parallel
-      maxParallel: 1
-      matrix:
-        .Net Core 3.x:
-          FRAMEWORK: netcoreapp3.1
-          NUGET_DROP: true
+  ### Build nuget packages
+  - job: Build_Pkg
+    displayName: Build Packages
+    timeoutInMinutes: 30
 
     condition: succeeded()
     pool:
       vmImage: windows-2022
 
     steps:
-
       - task: UseDotNet@2
         displayName: 'Use .NET SDK 6.x'
         inputs:
@@ -68,6 +60,37 @@ jobs:
           Destination: AzureBlob
           storage: azuresdkpartnerdrops
           ContainerName: 'drops/azure-iot-sdk/net'
+
+  ### Windows build ###
+  - job: Windows_Test
+    displayName: Windows Build
+    timeoutInMinutes: 100
+    strategy:
+      # Change maxParallel to 1 make builds run in serial rather than in parallel
+      maxParallel: 1
+      matrix:
+        .Net Core 3.x:
+          FRAMEWORK: netcoreapp3.1
+          NUGET_DROP: true
+
+    condition: succeeded()
+    pool:
+      vmImage: windows-2022
+
+    steps:
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 6.x'
+        inputs:
+          packageType: sdk
+          version: 6.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/net
+
+      - script: |
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
+          sn -Vr *,31bf3856ad364e35
+        displayName: 'Disable strong name validation'
 
       - task: PowerShell@2
         displayName: 'Pre-Download files'
