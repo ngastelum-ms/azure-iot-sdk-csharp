@@ -178,7 +178,7 @@ jobs:
 
       - task: PowerShell@2
         displayName: 'Rename Packages for Partner Release Pipeline'
-        condition: eq($(NUGET_DROP), 'true')
+        condition: eq(variables['NUGET_DROP'], 'true')
         inputs:
           targetType: 'inline'
           script: |
