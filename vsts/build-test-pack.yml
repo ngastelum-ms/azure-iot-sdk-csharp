@@ -15,7 +15,7 @@ jobs:
       matrix:
         .Net Core 3.x:
           FRAMEWORK: netcoreapp3.1
-          NUGET-DROP: true
+          NUGET_DROP: true
         .Net Core 2.x:
           FRAMEWORK: netcoreapp2.1.18
 
@@ -178,7 +178,7 @@ jobs:
 
       - task: PowerShell@2
         displayName: 'Rename Packages for Partner Release Pipeline'
-        condition: eq($(NUGET-DROP), 'true')
+        condition: eq($(NUGET_DROP), 'true')
         inputs:
           targetType: 'inline'
           script: |
