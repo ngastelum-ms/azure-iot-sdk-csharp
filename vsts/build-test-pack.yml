@@ -70,6 +70,51 @@ jobs:
             Write-Host Start building release package on $(Agent.Id):$(Agent.MachineName)
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
+      - task: PowerShell@2
+        displayName: 'Rename Packages for Partner Release Pipeline [azure-iot-sdk/net/pkgs_$file_date]'
+        condition: eq(variables['NUGET_DROP'], 'true')
+        inputs:
+          targetType: 'inline'
+          script: |
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$file_date
+            Write-Host " "
+            Write-Host "Package contents (renamed):"
+            gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
+
+      - task: AzureFileCopy@2
+        displayName: 'File Copy to Partner Release Pipeline Storage'
+        inputs:
+          SourcePath: '$(Build.SourcesDirectory)/bin'
+          azureSubscription: azuresdkpartnerdrops
+          Destination: AzureBlob
+          storage: azuresdkpartnerdrops
+          ContainerName: 'drops/azure-iot-sdk/net'
+
+      - task: PowerShell@2
+        displayName: 'Pre-Download files'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Download contents:"
+            gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
+
+      - task: AzureCLI@2
+        displayName: File Copy from Partner Release Pipeline Storage'
+        inputs:
+          azureSubscription: azuresdkpartnerdrops
+          scriptType: ps
+          scriptLocation: inlineScript
+          inlineScript: |
+            az storage blob download-batch --account-name azuresdkpartnerdrops --source drops/azure-iot-sdk/net/pkgs_$file_date --destination $(System.DefaultWorkingDirectory)/bin
+
+      - task: PowerShell@2
+        displayName: 'Downloaded files'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Download contents:"
+            gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
+ 
       - script: |
           choco install -y squid
         displayName: 'Setup Proxy (Squid)'
@@ -101,7 +146,7 @@ jobs:
           Write-Host List all NuGet sources
           dotnet nuget list source
           
-          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -configuration Release -framework $(FRAMEWORK) -e2etests"
+          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -configuration Release -framework $(FRAMEWORK) -unitests"
           Invoke-Expression $runTestCmd
 
           $gateFailed = $LASTEXITCODE
