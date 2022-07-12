@@ -3,8 +3,11 @@ resources:
   - repo: self
     clean: true
 
-jobs:
+variables:
+  NUGET_PKG_DATE: ''
 
+jobs:
+  
   ### Windows build ###
   - job: Windows_Test
     displayName: Windows Build
@@ -64,8 +67,9 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            $NUGET_PKG_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
-            Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $(NUGET_PKG_DATE)
+            $FILE_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
+            echo "##vso[task.setvariable variable=NUGET_PKG_DATE]$FILE_DATE"
+            Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $NUGET_PKG_DATE
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - task: PowerShell@2
@@ -74,10 +78,11 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(NUGET_PKG_DATE)
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$NUGET_PKG_DATE
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
+
       - task: AzureFileCopy@2
         displayName: 'File Copy to Partner Release Pipeline Storage'
         inputs:
@@ -94,6 +99,7 @@ jobs:
           script: |
             Write-Host "Download contents:"
             gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
+
       - task: AzureCLI@2
         displayName: File Copy from Partner Release Pipeline Storage'
         inputs:
@@ -102,7 +108,7 @@ jobs:
           scriptLocation: inlineScript
           inlineScript: |
             set AZCOPY_SPA_CLIENT_SECRET=<azuresdkpartnerdrops-service-principal-key>
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PKG_DATE) $(System.DefaultWorkingDirectory)/nuget
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$NUGET_PKG_DATE $(System.DefaultWorkingDirectory)/nuget
 
       - task: PowerShell@2
         displayName: 'Downloaded files'
