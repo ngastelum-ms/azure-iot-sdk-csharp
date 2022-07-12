@@ -22,29 +22,6 @@ jobs:
       vmImage: windows-2022
 
     steps:
-      - task: UseDotNet@2
-        displayName: 'Use .NET Core SDK 2.x'
-        inputs:
-          packageType: sdk
-          version: 2.1.x
-          performMultiLevelLookup: true
-          installationPath: $(Agent.ToolsDirectory)/net
-
-      - task: UseDotNet@2
-        displayName: 'Use .NET Core SDK 3.x'
-        inputs:
-          packageType: sdk
-          version: 3.1.x
-          performMultiLevelLookup: true
-          installationPath: $(Agent.ToolsDirectory)/net
-
-      - task: UseDotNet@2
-        displayName: 'Use .NET SDK 5.x'
-        inputs:
-          packageType: sdk
-          version: 5.x
-          performMultiLevelLookup: true
-          installationPath: $(Agent.ToolsDirectory)/net
 
       - task: UseDotNet@2
         displayName: 'Use .NET SDK 6.x'
@@ -61,14 +38,12 @@ jobs:
 
       - task: PowerShell@2
         displayName: 'Build Packages'
-        name: build_package
         inputs:
           targetType: 'inline'
           script: |
-            $FILE_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
-            Write-Host Package Folder will be appended with date suffix: $FILE_DATE
-            Write-Host "##vso[task.setvariable variable=NUGET_PKG_DATE;isoutput=true]$(FILE_DATE)"
-            Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $(NUGET_PKG_DATE)
+            $env:NUGET_PKG_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
+            Write-Host Package Folder will be appended with date suffix: $env:NUGET_PKG_DATE
+            Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $env:NUGET_PKG_DATE
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - task: PowerShell@2
@@ -77,7 +52,7 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(build_package.NUGET_PKG_DATE)
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$env:NUGET_PKG_DATE
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
@@ -237,7 +212,7 @@ jobs:
         condition: always()
 
       - task: PowerShell@2
-        displayName: 'Rename Packages for Partner Release Pipeline [azure-iot-sdk/net/pkgs_$file_date]'
+        displayName: 'Rename Packages for Partner Release Pipeline'
         condition: eq(variables['NUGET_DROP'], 'true')
         inputs:
           targetType: 'inline'
@@ -249,11 +224,11 @@ jobs:
             Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
             Write-Host "The package name below is used in the partner release pipeline to identify files for signing"
             Write-Host " "
-            Write-Host "azure-iot-sdk/net/pkgs_$file_date"
+            Write-Host "azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE"
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host " "
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(build_package.NUGET_PKG_DATE)
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$env:NUGET_PKG_DATE
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
