@@ -36,7 +36,7 @@ jobs:
           script: |
             $env:FILE_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
             Write-Host Package Folder will be appended with date suffix: $env:FILE_DATE
-            Write-Host "##vso[task.setvariable variable=NUGET_PKG_DATE]$env:FILE_DATE"
+            Write-Host "##vso[task.setvariable variable=NUGET_PKG_DATE;isoutput=true;]$env:FILE_DATE"
             Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $env:FILE_DATE
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
@@ -99,6 +99,7 @@ jobs:
           script: |
             Write-Host "Download contents:"
             gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
+            Write-Host "Nuget package will be downloaded to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(BUILD_PKG.NUGET_PKG_DATE)"
 
       - task: AzureCLI@2
         displayName: File Copy from Partner Release Pipeline Storage'
@@ -109,7 +110,7 @@ jobs:
           inlineScript: |
             $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
             azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PKG_DATE)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(BUILD_PKG.NUGET_PKG_DATE)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
             
       - task: PowerShell@2
         displayName: 'Downloaded files'
