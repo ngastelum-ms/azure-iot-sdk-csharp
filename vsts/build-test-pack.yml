@@ -16,8 +16,6 @@ jobs:
         .Net Core 3.x:
           FRAMEWORK: netcoreapp3.1
           NUGET_DROP: true
-        .Net Core 2.x:
-          FRAMEWORK: netcoreapp2.1.18
 
     condition: succeeded()
     pool:
