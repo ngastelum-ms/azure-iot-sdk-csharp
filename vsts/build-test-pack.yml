@@ -6,12 +6,12 @@ resources:
 jobs:
 
   ### Windows build ###
-  - job: Windows_build
+  - job: Windows_Test
     displayName: Windows Build
     timeoutInMinutes: 90
     strategy:
       # Change maxParallel to 1 make builds run in serial rather than in parallel
-      maxParallel: 100
+      maxParallel: 1
       matrix:
         .Net Core 3.x:
           FRAMEWORK: netcoreapp3.1
@@ -25,36 +25,60 @@ jobs:
 
     steps:
       - task: UseDotNet@2
-        displayName: 'Use .NET Core SDK 3.1'
+        displayName: 'Use .NET Core SDK 2.x'
+        inputs:
+          packageType: sdk
+          version: 2.1.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/net
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core SDK 3.x'
         inputs:
           packageType: sdk
           version: 3.1.x
           performMultiLevelLookup: true
-          installationPath: $(Agent.ToolsDirectory)/dotnet
+          installationPath: $(Agent.ToolsDirectory)/net
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 5.x'
+        inputs:
+          packageType: sdk
+          version: 5.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/net
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 6.x'
+        inputs:
+          packageType: sdk
+          version: 6.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/net
 
       - script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
           sn -Vr *,31bf3856ad364e35
         displayName: 'Disable strong name validation'
 
-      - script: |
-          choco install -y squid            
-        displayName: 'Install Squid (Setup proxy for test)'
-
-      - task: PowerShell@2
-        displayName: 'Start TPM Simulator (Setup TPM for test)'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host Start TPM Simulator
-            Start $(Build.SourcesDirectory)\vsts\TpmSimulator\Simulator.exe
-            
       - task: PowerShell@2
         displayName: 'Build Packages'
         inputs:
           targetType: 'inline'
           script: |
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
+
+      - script: |
+          choco install -y squid            
+        displayName: 'Setup Proxy'
+
+      - task: PowerShell@2
+        displayName: 'Setup TPM Simulator'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host Start TPM Simulator
+            Start $(Build.SourcesDirectory)\vsts\TpmSimulator\Simulator.exe
 
       - powershell: |
           Function IsWindows() 
@@ -69,7 +93,7 @@ jobs:
             logman start IotTrace
           }
 
-          Write-Host Add DevOps artifacts location as local NuGet source
+          Write-Host Add DevOps artifacts location as local NuGet source ($env:AZURE_IOT_LOCALPACKAGES)
           dotnet nuget add source $env:AZURE_IOT_LOCALPACKAGES -n "LocalPackages"
 
           Write-Host List all NuGet sources
@@ -79,6 +103,7 @@ jobs:
           Invoke-Expression $runTestCmd
 
           $gateFailed = $LASTEXITCODE
+          Write-Host "Test ended ($gateFailed)"
 
           if (isWindows) 
           {
@@ -161,13 +186,13 @@ jobs:
         condition: always()
 
       - task: PublishBuildArtifacts@1
-        displayName: 'Publish Artifact: testresults'
+        displayName: 'Publish Artifact: testresults_windows_$(FRAMEWORK)'
         inputs:
           ArtifactName: testresults_windows_$(FRAMEWORK)
         condition: always()
 
       - task: PublishTestResults@2
-        displayName: 'Publish Test Results **/*.trx'
+        displayName: 'Publish Test Results: $(FRAMEWORK)/**/*.trx'
         inputs:
           testRunner: VSTest
           testResultsFiles: '**/*.trx'
