@@ -8,7 +8,7 @@ jobs:
   ### Windows build ###
   - job: Windows_Test
     displayName: Windows Build
-    timeoutInMinutes: 90
+    timeoutInMinutes: 200
     strategy:
       # Change maxParallel to 1 make builds run in serial rather than in parallel
       maxParallel: 1
