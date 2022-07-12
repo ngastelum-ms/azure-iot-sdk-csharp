@@ -66,14 +66,15 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
+            Write-Host Start building release package on $(Agent.Id):$(Agent.MachineName)
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - script: |
-          choco install -y squid            
-        displayName: 'Setup Proxy'
+          choco install -y squid
+        displayName: 'Setup Proxy (Squid)'
 
       - task: PowerShell@2
-        displayName: 'Setup TPM Simulator'
+        displayName: 'Setup TPM Simulator (EXE)'
         inputs:
           targetType: 'inline'
           script: |
@@ -99,7 +100,7 @@ jobs:
           Write-Host List all NuGet sources
           dotnet nuget list source
           
-          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -configuration Release -framework $(FRAMEWORK) -e2etests"
+          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -configuration Release -framework $(FRAMEWORK) -unittests"
           Invoke-Expression $runTestCmd
 
           $gateFailed = $LASTEXITCODE
@@ -202,7 +203,7 @@ jobs:
         condition: always()
 
       - task: PowerShell@2
-        displayName: 'Rename Packages for Partner Release Pipeline'
+        displayName: 'Rename Packages for Partner Release Pipeline [azure-iot-sdk/net/pkgs_$file_date]'
         condition: eq(variables['NUGET_DROP'], 'true')
         inputs:
           targetType: 'inline'
@@ -221,8 +222,6 @@ jobs:
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host " "
             Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$file_date
-            Write-Host " "
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/pkgs_$file_date
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
