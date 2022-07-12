@@ -84,10 +84,10 @@ jobs:
           scriptType: ps
           scriptLocation: inlineScript
           inlineScript: |
-            set AZCOPY_SPA_CLIENT_SECRET=<azuresdkpartnerdrops-service-principal-key>
+            $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
             azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PKG_DATE)" "$(System.DefaultWorkingDirectory)/bin/nuget"
-
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PKG_DATE)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
+            
       - task: PowerShell@2
         displayName: 'Downloaded files'
         inputs:
