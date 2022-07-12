@@ -8,13 +8,16 @@ jobs:
   ### Windows build ###
   - job: Windows_build
     displayName: Windows Build
-    timeoutInMinutes: 75
+    timeoutInMinutes: 90
     strategy:
       # Change maxParallel to 1 make builds run in serial rather than in parallel
       maxParallel: 100
       matrix:
-        .Net Core 3.1:
+        .Net Core 3.x:
           FRAMEWORK: netcoreapp3.1
+          NUGET-DROP: true
+        .Net Core 2.x:
+          FRAMEWORK: netcoreapp2.1.18
 
     condition: succeeded()
     pool:
@@ -174,7 +177,8 @@ jobs:
         condition: always()
 
       - task: PowerShell@2
-        displayName: 'Add date for Packages'
+        displayName: 'Rename Packages for Partner Release Pipeline'
+        condition: eq($(NUGET-DROP), 'true')
         inputs:
           targetType: 'inline'
           script: |
@@ -192,4 +196,9 @@ jobs:
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host " "
             Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$file_date
-        
+            Write-Host " "
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/pkgs_$file_date
+            Write-Host " "
+            Write-Host "Package contents (renamed):"
+            gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
+
