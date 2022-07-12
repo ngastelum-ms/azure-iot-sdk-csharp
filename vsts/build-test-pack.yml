@@ -64,8 +64,8 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            $Env:NUGET_PKG_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
-            Write-Host Start building release package on $(Agent.Id):$(Agent.MachineName) on $ENV:NUGET_PKG_DATE
+            $NUGET_PKG_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
+            Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $(NUGET_PKG_DATE)
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - task: PowerShell@2
@@ -74,7 +74,7 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$env:NUGET_PKG_DATE
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(NUGET_PKG_DATE)
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
@@ -102,7 +102,7 @@ jobs:
           scriptLocation: inlineScript
           inlineScript: |
             set AZCOPY_SPA_CLIENT_SECRET=<azuresdkpartnerdrops-service-principal-key>
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE $(System.DefaultWorkingDirectory)/nuget
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PKG_DATE) $(System.DefaultWorkingDirectory)/nuget
 
       - task: PowerShell@2
         displayName: 'Downloaded files'
@@ -248,7 +248,7 @@ jobs:
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
             Write-Host " "
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$file_date
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(NUGET_PKG_DATE)
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
