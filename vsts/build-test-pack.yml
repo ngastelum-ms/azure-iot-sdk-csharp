@@ -45,7 +45,7 @@ jobs:
             $env:FILE_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
             Write-Host Package Folder will be appended with date suffix: $env:FILE_DATE
             Write-Host "##vso[task.setvariable variable=NUGET_PKG_DATE]$env:FILE_DATE"
-            Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $(NUGET_PKG_DATE)
+            Write-Host Start building release package with $(Agent.Id):$(Agent.MachineName) on $env:FILE_DATE
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - task: PowerShell@2
