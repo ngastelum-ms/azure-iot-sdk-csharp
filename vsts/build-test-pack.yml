@@ -46,7 +46,7 @@ jobs:
           targetType: 'inline'
           script: |
             Write-Host ""
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(NUGET_PKG_DATE)
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(BUILD_PKG.NUGET_PKG_DATE)
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
