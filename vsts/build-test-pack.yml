@@ -6,8 +6,8 @@ resources:
 jobs:
   
   ### Build nuget packages
-  - job: Build_Pkg
-    displayName: Build Packages
+  - job: Build_Packages
+    displayName: Build Nuget Packages
     timeoutInMinutes: 30
 
     condition: succeeded()
@@ -42,7 +42,6 @@ jobs:
 
       - task: PowerShell@2
         displayName: 'Rename Packages for Partner Release Pipeline'
-        condition: eq(variables['NUGET_DROP'], 'true')
         inputs:
           targetType: 'inline'
           script: |
@@ -63,7 +62,7 @@ jobs:
 
   ### Windows build ###
   - job: Windows_Test
-    displayName: Windows Build
+    displayName: Windows Tests
     timeoutInMinutes: 100
     strategy:
       # Change maxParallel to 1 make builds run in serial rather than in parallel
@@ -74,6 +73,7 @@ jobs:
           NUGET_DROP: true
 
     condition: succeeded()
+    dependsOn: Build_Packages
     pool:
       vmImage: windows-2022
 
