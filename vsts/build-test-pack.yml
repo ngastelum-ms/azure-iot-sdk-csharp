@@ -66,17 +66,17 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            $file_date = get-date -f yyyy-MM-dd-hh-mm-ss.f
+            $env:NUGET_PKG_DATE = get-date -f yyyy-MM-dd-hh-mm-ss.f
             Write-Host Start building release package on $(Agent.Id):$(Agent.MachineName)
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - task: PowerShell@2
-        displayName: 'Rename Packages for Partner Release Pipeline [azure-iot-sdk/net/pkgs_$file_date]'
+        displayName: 'Rename Packages for Partner Release Pipeline [azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE]'
         condition: eq(variables['NUGET_DROP'], 'true')
         inputs:
           targetType: 'inline'
           script: |
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$file_date
+            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$env:NUGET_PKG_DATE
             Write-Host " "
             Write-Host "Package contents (renamed):"
             gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
@@ -105,7 +105,7 @@ jobs:
           scriptType: ps
           scriptLocation: inlineScript
           inlineScript: |
-            az storage blob download-batch --account-name azuresdkpartnerdrops --source drops/azure-iot-sdk/net/pkgs_$file_date --destination $(System.DefaultWorkingDirectory)/bin
+            az storage blob download-batch --account-name azuresdkpartnerdrops --source drops/azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE --destination $(System.DefaultWorkingDirectory)/nuget
 
       - task: PowerShell@2
         displayName: 'Downloaded files'
@@ -113,7 +113,7 @@ jobs:
           targetType: 'inline'
           script: |
             Write-Host "Download contents:"
-            gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
+            gci -Path $(System.DefaultWorkingDirectory)/nuget -Recurse -Force
  
       - script: |
           choco install -y squid
