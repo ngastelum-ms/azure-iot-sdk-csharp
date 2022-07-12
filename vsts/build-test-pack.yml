@@ -69,7 +69,7 @@ jobs:
             $(Build.SourcesDirectory)/build.ps1 -build -clean -configuration Release -package
 
       - task: PowerShell@2
-        displayName: 'Rename Packages for Partner Release Pipeline [azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE]'
+        displayName: 'Rename Packages for Partner Release Pipeline'
         condition: eq(variables['NUGET_DROP'], 'true')
         inputs:
           targetType: 'inline'
@@ -101,7 +101,9 @@ jobs:
           scriptType: ps
           scriptLocation: inlineScript
           inlineScript: |
-            az storage blob download-batch --account-name azuresdkpartnerdrops --source drops/azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE --destination $(System.DefaultWorkingDirectory)/nuget
+            set AZCOPY_SPA_CLIENT_SECRET=<azuresdkpartnerdrops-service-principal-key>
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE $(System.DefaultWorkingDirectory)/nuget
+
       - task: PowerShell@2
         displayName: 'Downloaded files'
         inputs:
