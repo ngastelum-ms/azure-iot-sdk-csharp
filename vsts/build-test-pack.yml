@@ -76,8 +76,20 @@ jobs:
     dependsOn: Build_Packages
     pool:
       vmImage: windows-2022
+    
+    variables:
+      NUGET_PACKGE_FOLDER: $[ dependencies.Build_Packages.outputs['BUILD_PKG.NUGET_PKG_DATE'] ]
 
     steps:
+
+      - task: PowerShell@2
+        displayName: 'Pre-Download files'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Download contents:"
+            gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
+            Write-Host "Nuget package will be downloaded to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
 
       - task: UseDotNet@2
         displayName: 'Use .NET SDK 6.x'
@@ -92,15 +104,6 @@ jobs:
           sn -Vr *,31bf3856ad364e35
         displayName: 'Disable strong name validation'
 
-      - task: PowerShell@2
-        displayName: 'Pre-Download files'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Download contents:"
-            gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
-            Write-Host "Nuget package will be downloaded to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(BUILD_PKG.NUGET_PKG_DATE)"
-
       - task: AzureCLI@2
         displayName: File Copy from Partner Release Pipeline Storage'
         inputs:
@@ -110,7 +113,7 @@ jobs:
           inlineScript: |
             $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
             azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(BUILD_PKG.NUGET_PKG_DATE)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
             
       - task: PowerShell@2
         displayName: 'Downloaded files'
@@ -240,25 +243,3 @@ jobs:
           platform: Windows
           configuration: 'Debug UT + Release E2E ($(FRAMEWORK))'
         condition: always()
-
-      - task: PowerShell@2
-        displayName: 'Rename Packages for Partner Release Pipeline'
-        condition: eq(variables['NUGET_DROP'], 'true')
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Package contents:"
-            gci $(Build.SourcesDirectory)/bin/pkg
-            Write-Host " "
-            Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
-            Write-Host "\/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/ \/"
-            Write-Host "The package name below is used in the partner release pipeline to identify files for signing"
-            Write-Host " "
-            Write-Host "azure-iot-sdk/net/pkgs_$env:NUGET_PKG_DATE"
-            Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
-            Write-Host "/\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\ /\"
-            Write-Host " "
-            Rename-Item $(Build.SourcesDirectory)/bin/pkg $(Build.SourcesDirectory)/bin/pkgs_$(NUGET_PKG_DATE)
-            Write-Host " "
-            Write-Host "Package contents (renamed):"
-            gci -Path $(Build.SourcesDirectory)/bin -Recurse -Force
