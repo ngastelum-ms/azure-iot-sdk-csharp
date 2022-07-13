@@ -61,6 +61,12 @@ jobs:
           storage: azuresdkpartnerdrops
           ContainerName: 'drops/azure-iot-sdk/net'
 
+#      - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+#        displayName: 'SBOM Generation Task'
+#        inputs:
+#          BuildDropPath: '$(Build.SourcesDirectory)/bin/pkgs_$(BUILD_PKG.NUGET_PKG_DATE)'
+
+
   ### Windows Tests ###
   - job: Windows_Test
     displayName: Windows Tests
