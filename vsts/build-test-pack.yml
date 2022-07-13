@@ -5,10 +5,11 @@ resources:
 
 jobs:
   
-  ### Build nuget packages
+  ### Build nuget packages ###
   - job: Build_Packages
     displayName: Build Nuget Packages
-    timeoutInMinutes: 30
+    timeoutInMinutes: 20
+    #typically run 6-8 mins
 
     condition: succeeded()
     pool:
@@ -63,14 +64,21 @@ jobs:
   ### Windows build ###
   - job: Windows_Test
     displayName: Windows Tests
-    timeoutInMinutes: 100
+    timeoutInMinutes: 90
+    # Typically run for 50-60 mins for E2E tests on a single framework
+
     strategy:
       # Change maxParallel to 1 make builds run in serial rather than in parallel
       maxParallel: 1
       matrix:
+        .Net 6.x:
+          FRAMEWORK: net6.0
+        .Net 5.x:
+          FRAMEWORK: net5.0
         .Net Core 3.x:
           FRAMEWORK: netcoreapp3.1
-          NUGET_DROP: true
+        .Net Core 2.x:
+          FRAMEWORK: netcoreapp2.1.18
 
     condition: succeeded()
     dependsOn: Build_Packages
@@ -96,6 +104,30 @@ jobs:
         inputs:
           packageType: sdk
           version: 6.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/net
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 5.x'
+        inputs:
+          packageType: sdk
+          version: 5.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/net
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 3.x'
+        inputs:
+          packageType: sdk
+          version: 3.1.x
+          performMultiLevelLookup: true
+          installationPath: $(Agent.ToolsDirectory)/net
+
+      - task: UseDotNet@2
+        displayName: 'Use .NET SDK 2.x'
+        inputs:
+          packageType: sdk
+          version: 2.1.x
           performMultiLevelLookup: true
           installationPath: $(Agent.ToolsDirectory)/net
 
@@ -201,6 +233,7 @@ jobs:
           PROXY_SERVER_ADDRESS: 127.0.0.1:3128
           TARGET_BRANCH: $(System.PullRequest.TargetBranch)
           FRAMEWORK: $(FRAMEWORK)
+          # Local nuget packages for testing
           AZURE_IOT_LOCALPACKAGES: $(Build.SourcesDirectory)/bin/nuget
           # Environment variables for invalid certificate tests
           IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
@@ -211,6 +244,7 @@ jobs:
           LA_AAD_APP_ID: $(LA-AAD-APP-ID)
           LA_AAD_APP_CERT_BASE64: $(LA-AAD-APP-CERT-BASE64)
           LA_WORKSPACE_ID: $(LA-WORKSPACE-ID)
+
       - task: CopyFiles@2
         displayName: 'Copy TRX files to the artifacts folder'
         inputs:
