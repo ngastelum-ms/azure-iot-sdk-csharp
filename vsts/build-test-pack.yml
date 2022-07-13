@@ -90,17 +90,6 @@ jobs:
 
     steps:
 
-      - task: PowerShell@2
-        displayName: 'Pre-Download Nuget Package'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Download contents:"
-            gci -Path $(System.DefaultWorkingDirectory)
-            gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
-            Write-Host "Start testing on $(Agent.Id):$(Agent.MachineName)"
-            Write-Host "Start testing release package in $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
-
       - task: AzureCLI@2
         displayName: File Copy from Partner Release Pipeline Storage'
         inputs:
@@ -108,6 +97,8 @@ jobs:
           scriptType: ps
           scriptLocation: inlineScript
           inlineScript: |
+            Write-Host "Prepare testing on $(Agent.Id):$(Agent.MachineName)"
+            Write-Host "Copy release package to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
             $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
             azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
             azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
@@ -185,7 +176,7 @@ jobs:
           Write-Host List all NuGet sources
           dotnet nuget list source
           
-          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -configuration Release -framework $(FRAMEWORK) -unitests"
+          $runTestCmd = "$(Build.SourcesDirectory)/build.ps1 -configuration Release -framework $(FRAMEWORK) -e2etests"
           Invoke-Expression $runTestCmd
           $gateFailed = $LASTEXITCODE
           Write-Host "Test ended ($gateFailed)"
@@ -207,6 +198,8 @@ jobs:
           }      
         displayName: 'E2E Tests'
         env:
+          # Local nuget packages for testing
+          AZURE_IOT_LOCALPACKAGES: $(Build.SourcesDirectory)/bin/nuget
           # Environment variables for IoT Hub E2E tests
           IOTHUB_CONNECTION_STRING: $(IOTHUB-CONNECTION-STRING)
           IOTHUB_X509_DEVICE_PFX_CERTIFICATE: $(IOTHUB-X509-DEVICE-PFX-CERTIFICATE)
@@ -228,15 +221,14 @@ jobs:
           X509_CHAIN_INTERMEDIATE2_PFX_CERTIFICATE: $(X509-CHAIN-INTERMEDIATE2-PFX-CERTIFICATE)
           STORAGE_ACCOUNT_CONNECTION_STRING: $(STORAGE-ACCOUNT-CONNECTION-STRING)
           MSFT_TENANT_ID: $(MSFT-TENANT-ID)
+          # Environment variables for E2E Tests
+          E2E_IKEY: $(E2E-IKEY)
           E2E_TEST_AAD_APP_CLIENT_ID: $(E2E-TEST-AAD-APP-CLIENT-ID)
           E2E_TEST_AAD_APP_CLIENT_SECRET: $(E2E-TEST-AAD-APP-CLIENT-SECRET)
-          E2E_IKEY: $(E2E-IKEY)
           # Environment variables for the DevOps pipeline
           PROXY_SERVER_ADDRESS: 127.0.0.1:3128
           TARGET_BRANCH: $(System.PullRequest.TargetBranch)
           FRAMEWORK: $(FRAMEWORK)
-          # Local nuget packages for testing
-          AZURE_IOT_LOCALPACKAGES: $(Build.SourcesDirectory)/bin/nuget
           # Environment variables for invalid certificate tests
           IOTHUB_DEVICE_CONN_STRING_INVALIDCERT: $(IOTHUB-DEVICE-CONN-STRING-INVALIDCERT)
           IOTHUB_CONN_STRING_INVALIDCERT: $(IOTHUB-CONN-STRING-INVALIDCERT)
