@@ -288,7 +288,7 @@ jobs:
         inputs:
           targetType: 'inline'
           script: |
-            echo 'Download contents:"
+            echo "Download contents:"
             ls -al $(System.DefaultWorkingDirectory)/bin/nuget
 
       - task: UseDotNet@2
