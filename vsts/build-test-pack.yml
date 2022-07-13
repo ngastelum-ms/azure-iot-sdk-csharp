@@ -9,7 +9,7 @@ jobs:
   - job: Build_Packages
     displayName: Build Nuget Packages
     timeoutInMinutes: 20
-    #typically run 6-8 mins
+    #typically run < 10 mins
 
     condition: succeeded()
     pool:
@@ -65,11 +65,11 @@ jobs:
   - job: Windows_Test
     displayName: Windows Tests
     timeoutInMinutes: 90
-    # Typically run for 50-60 mins for E2E tests on a single framework
+    # Typically runs < 60 mins for E2E tests on a single framework
 
     strategy:
       # Change maxParallel to 1 make builds run in serial rather than in parallel
-      maxParallel: 1
+      maxParallel: 10
       matrix:
         .Net 6.x:
           FRAMEWORK: net6.0
@@ -91,14 +91,35 @@ jobs:
     steps:
 
       - task: PowerShell@2
-        displayName: 'Pre-Download files'
+        displayName: 'Pre-Download Nuget Package'
         inputs:
           targetType: 'inline'
           script: |
             Write-Host "Download contents:"
+            gci -Path $(System.DefaultWorkingDirectory)
             gci -Path $(System.DefaultWorkingDirectory)/bin -Recurse -Force
-            Write-Host "Nuget package will be downloaded to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
+            Write-Host "Start testing on $(Agent.Id):$(Agent.MachineName)"
+            Write-Host "Start testing release package in $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
 
+      - task: AzureCLI@2
+        displayName: File Copy from Partner Release Pipeline Storage'
+        inputs:
+          azureSubscription: azuresdkpartnerdrops
+          scriptType: ps
+          scriptLocation: inlineScript
+          inlineScript: |
+            $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
+            azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
+            
+      - task: PowerShell@2
+        displayName: 'Downloaded files'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Download contents:"
+            gci -Path $(System.DefaultWorkingDirectory)/bin/nuget -Recurse -Force
+ 
       - task: UseDotNet@2
         displayName: 'Use .NET SDK 6.x'
         inputs:
@@ -136,25 +157,6 @@ jobs:
           sn -Vr *,31bf3856ad364e35
         displayName: 'Disable strong name validation'
 
-      - task: AzureCLI@2
-        displayName: File Copy from Partner Release Pipeline Storage'
-        inputs:
-          azureSubscription: azuresdkpartnerdrops
-          scriptType: ps
-          scriptLocation: inlineScript
-          inlineScript: |
-            $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
-            azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
-            
-      - task: PowerShell@2
-        displayName: 'Downloaded files'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Download contents:"
-            gci -Path $(System.DefaultWorkingDirectory)/bin/nuget -Recurse -Force
- 
       - script: |
           choco install -y squid
         displayName: 'Setup Proxy (Squid)'
