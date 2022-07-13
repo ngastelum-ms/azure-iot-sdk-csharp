@@ -100,27 +100,6 @@ jobs:
 
     steps:
 
-      - task: AzureCLI@2
-        displayName: File Copy from Partner Release Pipeline Storage'
-        inputs:
-          azureSubscription: azuresdkpartnerdrops
-          scriptType: ps
-          scriptLocation: inlineScript
-          inlineScript: |
-            Write-Host "Prepare testing on $(Agent.Id):$(Agent.MachineName)"
-            Write-Host "Copy release package to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
-            $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
-            azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
-            
-      - task: PowerShell@2
-        displayName: 'Downloaded files'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Download contents:"
-            gci -Path $(System.DefaultWorkingDirectory)/bin/nuget -Recurse -Force
- 
       - task: UseDotNet@2
         displayName: 'Use .NET SDK 6.x'
         inputs:
@@ -153,6 +132,27 @@ jobs:
           performMultiLevelLookup: true
           installationPath: $(Agent.ToolsDirectory)/net
 
+      - task: AzureCLI@2
+        displayName: File Copy from Partner Release Pipeline Storage'
+        inputs:
+          azureSubscription: azuresdkpartnerdrops
+          scriptType: ps
+          scriptLocation: inlineScript
+          inlineScript: |
+            Write-Host "Prepare testing on $(Agent.Id):$(Agent.MachineName)"
+            Write-Host "Copy release package to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
+            $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
+            azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
+            
+      - task: PowerShell@2
+        displayName: 'Downloaded files'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Download contents:"
+            gci -Path $(System.DefaultWorkingDirectory)/bin/nuget -Recurse -Force
+ 
       - script: |
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\Common7\Tools\VsDevCmd.bat"
           sn -Vr *,31bf3856ad364e35
@@ -275,27 +275,6 @@ jobs:
 
     steps:
 
-      - task: AzureCLI@2
-        displayName: File Copy from Partner Release Pipeline Storage'
-        inputs:
-          azureSubscription: azuresdkpartnerdrops
-          scriptType: ps
-          scriptLocation: inlineScript
-          inlineScript: |
-            Write-Host "Prepare testing on $(Agent.Id):$(Agent.MachineName)"
-            Write-Host "Copy release package to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
-            $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
-            azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
-            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
-            
-      - task: PowerShell@2
-        displayName: 'Downloaded files'
-        inputs:
-          targetType: 'inline'
-          script: |
-            Write-Host "Download contents:"
-            gci -Path $(System.DefaultWorkingDirectory)/bin/nuget -Recurse -Force
- 
       - task: UseDotNet@2
         displayName: 'Use .NET SDK 6.x'
         inputs:
@@ -328,6 +307,27 @@ jobs:
           performMultiLevelLookup: true
           installationPath: $(Agent.ToolsDirectory)/net
 
+      - task: AzureCLI@2
+        displayName: File Copy from Partner Release Pipeline Storage'
+        inputs:
+          azureSubscription: azuresdkpartnerdrops
+          scriptType: ps
+          scriptLocation: inlineScript
+          inlineScript: |
+            Write-Host "Prepare testing on $(Agent.Id):$(Agent.MachineName)"
+            Write-Host "Copy release package to $(System.DefaultWorkingDirectory)/bin/nuget/pkgs_$(NUGET_PACKGE_FOLDER)"
+            $env:AZCOPY_SPA_CLIENT_SECRET="b1x/AsPIm09FWjuedF46m7D1kxHQHcx+ptu9310TNtE=" 
+            azcopy login --service-principal --application-id cfb5fe52-8bb2-4901-9056-70449fa2df96
+            azcopy copy "https://azuresdkpartnerdrops.blob.core.windows.net/drops/azure-iot-sdk/net/pkgs_$(NUGET_PACKGE_FOLDER)/*" "$(System.DefaultWorkingDirectory)/bin/nuget" --recursive
+            
+      - task: PowerShell@2
+        displayName: 'Downloaded files'
+        inputs:
+          targetType: 'inline'
+          script: |
+            Write-Host "Download contents:"
+            gci -Path $(System.DefaultWorkingDirectory)/bin/nuget -Recurse -Force
+ 
       - task: Docker@1
         displayName: "Start TPM Simulator"
         inputs:
